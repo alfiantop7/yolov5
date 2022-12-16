@@ -5,6 +5,8 @@ import time
 import imutils
 import numpy as np
 from imutils.video import FPS
+import serial
+ArduinoSerial = serial.Serial('/dev/ttyACM0',9600,timeout=0.1)
 
 
 
@@ -31,30 +33,82 @@ def plot_boxes(results, frame, classes):
     n = len(labels)
     x_shape, y_shape = frame.shape[1], frame.shape[0]
 
+    confidence_max = 0
+    confidence_max_index = 0
+    size_max = 0
+    size_max_index = 0
+
+
     # print(f"[INFO] Total {n} detections. . . ")
     # print(f"[INFO] Looping through all detections. . . ")
     # print(f'--- ini labels {labels}')
 
     ### looping through the detections
     for i in range(n):
-        row = cord[i]
-        if row[4] >= 0.55: ### threshold value for detection. We are discarding everything below this value
-            #print(f"[INFO] Extracting BBox coordinates. . . ")
-            w1, h1, w2, h2 = float(row[0]*x_shape), float(row[1]*y_shape), float(row[2]*x_shape), float(row[3]*y_shape)
-            x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape) ## BBOx coordniates
-            
-            kotak = x1, y1, x2, y2
-            # print(kotak)
-            
-            text_d = classes[int(labels[i])]
-            # print(f'--- ini text_d {text_d}')
-            # print(f'--- ini classes {classes}')
+        #get highest confidence
+        if cord[i][4] > confidence_max:
+            confidence_max= cord[i][4]
+            confidence_max_index = i
+        size_curr = abs(cord[i][3]*y_shape - cord[i][1]*y_shape)
+        if size_curr > size_max:
+            size_max= size_curr
+            size_max_index = i
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 100), 2) ## BBox
-            cv2.rectangle(frame, (x1, y1-20), (x2, y1), (0, 200,100), -1) ## for text label background
+    #print(f"[INFO] Extracting BBox coordinates. . . ")
+    if n > 0:
+        row = cord[size_max_index]
+
+        w1, h1, w2, h2 = float(row[0]*x_shape), float(row[1]*y_shape), float(row[2]*x_shape), float(row[3]*y_shape)
+        x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape) ## BBOx coordniates
+        
+        kotak = x1, y1, x2, y2
+        # print(kotak)
+        
+        text_d = classes[int(labels[i])]
+        # print(f'--- ini text_d {text_d}')
+        # print(f'--- ini classes {classes}')
+
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 100, 200), 2) ## BBox
+        cv2.rectangle(frame, (x1, y1-20), (x2, y1), (0, 100,200), -1) ## for text label background
+
+        
+        cv2.putText(frame, 'Human' + f" {round(float(row[4]),2)}" + f"Size: {round(float(size_max), 2)}", (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.7,(255,255,255), 2)
+    elif False and n > 0:
+        row = cord[confidence_max_index]
+
+        w1, h1, w2, h2 = float(row[0]*x_shape), float(row[1]*y_shape), float(row[2]*x_shape), float(row[3]*y_shape)
+        x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape) ## BBOx coordniates
+        
+        kotak = x1, y1, x2, y2
+        # print(kotak)
+        
+        text_d = classes[int(labels[i])]
+        # print(f'--- ini text_d {text_d}')
+        # print(f'--- ini classes {classes}')
+
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 100), 2) ## BBox
+        cv2.rectangle(frame, (x1, y1-20), (x2, y1), (0, 200,100), -1) ## for text label background
+
+        
+        cv2.putText(frame, 'Human' + f" {round(float(row[4]),2)}" + f" | Size: {round(float(size_max), 2)}", (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.7,(255,255,255), 2)
+        # row = cord[i]
+        # if row[4] >= 0.55: ### threshold value for detection. We are discarding everything below this value
+        #     #print(f"[INFO] Extracting BBox coordinates. . . ")
+        #     w1, h1, w2, h2 = float(row[0]*x_shape), float(row[1]*y_shape), float(row[2]*x_shape), float(row[3]*y_shape)
+        #     x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape) ## BBOx coordniates
+            
+        #     kotak = x1, y1, x2, y2
+        #     # print(kotak)
+            
+        #     text_d = classes[int(labels[i])]
+        #     # print(f'--- ini text_d {text_d}')
+        #     # print(f'--- ini classes {classes}')
+
+        #     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 100), 2) ## BBox
+        #     cv2.rectangle(frame, (x1, y1-20), (x2, y1), (0, 200,100), -1) ## for text label background
 
                 
-            cv2.putText(frame, 'Human' + f" {round(float(row[4]),2)}", (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.7,(255,255,255), 2)
+        #     cv2.putText(frame, 'Human' + f" {round(float(row[4]),2)}", (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.7,(255,255,255), 2)
 
     return frame, kotak
 
@@ -66,12 +120,14 @@ def follow(xcen, startX, endX):
     if xcen < 150:
         #eh.motor.two.forward(speed)
         #sleep(t)
-        #eh.motor.two.stop()
+        string = "3"
+        #eh.motor.two.stop() 
         print("Left: xcen = ",xcen)
         
     elif xcen > 250:
         #eh.motor.one.forward(speed)
         #sleep(t)
+        string = "2"
         print("Right: xcen = ",xcen)
         #eh.motor.one.stop()
         
@@ -84,11 +140,12 @@ def follow(xcen, startX, endX):
     else:
         #eh.motor.forwards(sf)
         #sleep(tf)
+        string = "1"
         #eh.motor.stop()
         print("Forward: xcen = ",xcen)
 
 def stop():
-    pass
+    print("Stopped Following")
 
 ### ---------------------------------------------- Main function -----------------------------------------------------
 
@@ -97,7 +154,7 @@ def main(img_path=None, vid_path=None,vid_out = None):
     print(f"[INFO] Loading model... ")
     ## loading the custom trained model
     # model =  torch.hub.load('ultralytics/yolov5', 'custom', path='last.pt',force_reload=True) ## if you want to download the git repo and then run the detection
-    model =  torch.hub.load('yolov5', 'custom', source ='local', path='best2.pt',force_reload=True) ### The repo is stored locally
+    model =  torch.hub.load('yolov5', 'custom', source ='local', path='yolonew.pt', force_reload=True) ### The repo is stored locally
     fps = FPS().start()
     classes = model.names ### class names in string format
 
@@ -120,7 +177,7 @@ def main(img_path=None, vid_path=None,vid_out = None):
 
             cv2.imshow("img_only", frame)
 
-            if cv2.waitKey(5) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 print(f"[INFO] Exiting. . . ")
                 # cv2.imwrite("final_output.jpg",frame) ## if you want to save he output result.
 
@@ -131,20 +188,6 @@ def main(img_path=None, vid_path=None,vid_out = None):
 
         ## reading the video
         cap = cv2.VideoCapture(vid_path)
-
-
-        # if vid_out: ### creating the video writer if video output path is given
-
-        #     # by default VideoCapture returns float instead of int
-        #     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        #     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        #     fps = int(cap.get(cv2.CAP_PROP_FPS))
-
-            
-            # codec = cv2.VideoWriter_fourcc(*'mp4v') ##(*'XVID')
-            # out = cv2.VideoWriter(vid_out, codec, fps, (width, height))
-
-        # assert cap.isOpened()
         frame_no = 1
 
         cv2.namedWindow("vid_out", cv2.WINDOW_NORMAL)
@@ -155,10 +198,12 @@ def main(img_path=None, vid_path=None,vid_out = None):
                 # print(f"[INFO] Working with frame {frame_no} ")
 
                 frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                frame = imutils.resize(frame, width=500)
+                #width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                #height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
                 results = detectx(frame, model = model)
+                print(results)
                 frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
                 frame, box = plot_boxes(results, frame,classes = classes)
 
