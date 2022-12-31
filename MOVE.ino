@@ -13,8 +13,8 @@ void setup() {
 }
 //speed[0] = kiri, sebaliknya
 int speed[2] = {0, 0};
-int maxi = 70;
-int maxa = 0.8*maxi;
+int maxi = 100;
+int maxa = 0.96*maxi;
 int state = 1;
 
 // Maju 
@@ -37,9 +37,9 @@ void stop(){
 
 //Kanan
 void kanan(){
-  speed[0] += 5;
+  speed[0] += 10;
   speed[1] = 0;
-  speed[0] = speed[0] > 10 ? 10 : speed[0];
+  speed[0] = speed[0] > 30 ? 30 : speed[0];
   speed[1] = speed[1] > 0 ? 0 : speed[1];
   return;
   return;
@@ -48,9 +48,9 @@ void kanan(){
 //Kiri
 void kiri(){
   speed[0] = 0;
-  speed[1] += 5;
+  speed[1] += 10;
   speed[0] = speed[0] > 0 ? 0 : speed[0];
-  speed[1] = speed[1] > 10 ? 10 : speed[1];
+  speed[1] = speed[1] > 30? 30 : speed[1];
   return;
 } 
 
@@ -69,10 +69,10 @@ void loop() {
     case 3 : kiri(); break;
   }
 
-  analogWrite(pwm2, 0);
-  analogWrite(pwm1, speed[0]);
-  analogWrite(pwm4, 0);
-  analogWrite(pwm3, speed[1]);
+  analogWrite(pwm1, 0);
+  analogWrite(pwm2, speed[0]);
+  analogWrite(pwm3, 0);
+  analogWrite(pwm4, speed[1]);
   delay(100);
   Serial.println(String(speed[0]) + "+" + String(speed[1]));
 }
